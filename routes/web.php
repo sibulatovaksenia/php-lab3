@@ -1,7 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AbonentController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::resource('abonents', AbonentController::class);
+
+// Пошук абонентів
+Route::get('abonents/search', [AbonentController::class, 'search'])->name('abonents.search');
