@@ -7,92 +7,106 @@ use Illuminate\Http\Request;
 
 class AbonentController extends Controller
 {
-    // Показати всі абоненти
-    public function index()
+    /**
+     * Показати інформацію про абонента.
+     *
+     * @param  \App\Models\Abonent  $abonent
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Abonent $abonent)
     {
-        $abonents = Abonent::all(); // Отримати всі абоненти
-        return view('abonents.index', compact('abonents'));
+        $this->authorize('view', $abonent);
+
+        return view('abonents.show', compact('abonent'));
     }
 
-    // Створення нового абонента
+    /**
+     * Створити нового абонента.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function create()
     {
+        $this->authorize('create', Abonent::class);
+
         return view('abonents.create');
     }
 
-    // Зберегти нового абонента
+    /**
+     * Зберегти новий абонент.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(Request $request)
     {
+        // Валідація запиту
         $request->validate([
             'phone_number' => 'required|unique:abonents|regex:/^[0-9]{10}$/',
-            'home_address' => 'required',
-            'owner' => 'required',
-            'total_call_duration' => 'required|numeric',
-            'balance' => 'required|numeric',
+            'home_address' => 'required|string|max:255',
+            'owner' => 'required|string|max:255',
+            'total_call_duration' => 'required|numeric|min:0',
+            'balance' => 'required|numeric|min:0',
         ]);
 
+        // Створення нового абонента
         Abonent::create([
             'phone_number' => $request->phone_number,
             'home_address' => $request->home_address,
             'owner' => $request->owner,
             'total_call_duration' => $request->total_call_duration,
             'balance' => $request->balance,
+            'creator_user_id' => auth()->id(),
         ]);
 
-        return redirect()->route('abonents.index');
+        return redirect()->route('abonents.index')->with('success', 'Абонент успішно доданий!');
     }
 
-    // Показати форму для редагування абонента
-    public function edit($id)
+    /**
+     * Редагувати абонента.
+     *
+     * @param  \App\Models\Abonent  $abonent
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Abonent $abonent)
     {
-        $abonent = Abonent::findOrFail($id);
+        $this->authorize('update', $abonent);
+
         return view('abonents.edit', compact('abonent'));
     }
 
-    // Оновити абонента
+    /**
+     * Оновити абонента.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Abonent  $abonent
+     * @return \Illuminate\Http\Response
+     */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'phone_number' => 'required|regex:/^[0-9]{10}$/',
-            'home_address' => 'required',
-            'owner' => 'required',
-            'total_call_duration' => 'required|numeric',
-            'balance' => 'required|numeric',
-        ]);
-
         $abonent = Abonent::findOrFail($id);
-        $abonent->update([
-            'phone_number' => $request->phone_number,
-            'home_address' => $request->home_address,
-            'owner' => $request->owner,
-            'total_call_duration' => $request->total_call_duration,
-            'balance' => $request->balance,
-        ]);
 
-        return redirect()->route('abonents.index');
+        $this->authorize('update', $abonent);
+
+        $abonent->update($request->all());
+
+        return redirect()->route('abonents.index')->with('success', 'Абонент оновлений');
     }
 
-    // Видалити абонента
+    /**
+     * Видалити абонента.
+     *
+     * @param  \App\Models\Abonent  $abonent
+     * @return \Illuminate\Http\Response
+     */
     public function destroy($id)
     {
         $abonent = Abonent::findOrFail($id);
+
+        $this->authorize('delete', $abonent);
+
         $abonent->delete();
 
-        return redirect()->route('abonents.index');
-    }
-
-    // Пошук абонентів за прізвищем та тривалістю розмов
-    public function search(Request $request)
-    {
-        $request->validate([
-            'owner' => 'required|string',
-            'total_call_duration' => 'required|numeric',
-        ]);
-
-        $abonents = Abonent::where('owner', 'like', '%' . $request->owner . '%')
-            ->where('total_call_duration', '>', $request->total_call_duration)
-            ->get();
-
-        return view('abonents.index', compact('abonents'));
+        return redirect()->route('abonents.index')->with('success', 'Абонент видалений');
     }
 }
