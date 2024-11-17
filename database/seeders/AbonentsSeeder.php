@@ -7,9 +7,6 @@ use Illuminate\Database\Seeder;
 
 class AbonentsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         Abonent::create([
